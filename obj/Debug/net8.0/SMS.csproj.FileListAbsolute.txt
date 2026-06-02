@@ -173,3 +173,4 @@ F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\refint\SMS.dll
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.pdb
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.genruntimeconfig.cache
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\ref\SMS.dll
+F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.sourcelink.json
