@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SMS.Data;
 using SMS.Models;
+using Microsoft.Data.SqlClient;
 
 namespace SMS.Services;
 
@@ -8,6 +9,7 @@ public interface IMemberService
 {
     Task<List<MemberLookupResult>> GetMembersByCNICsAsync(List<string> cnics);
     Task<MemberLookupResult?> GetMemberByCNICAsync(string cnic);
+    Task<List<MemberLookupResult>> SearchMembersAsync(MemberSearchRequest request);
 }
 
 public class MemberService : IMemberService
@@ -125,6 +127,114 @@ public class MemberService : IMemberService
         {
             _logger.LogError(ex, $"Error retrieving member by CNIC: {cnic}");
             throw;
+        }
+    }
+
+    public async Task<List<MemberLookupResult>> SearchMembersAsync(MemberSearchRequest request)
+    {
+        try
+        {
+            if (request == null)
+            {
+                _logger.LogWarning("MemberSearchRequest is null");
+                return new List<MemberLookupResult>();
+            }
+
+            // Use the stored procedure directly with SqlParameter
+            var connection = _context.Database.GetDbConnection();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SPR_MemberSearch";
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                // Add parameters matching the stored procedure
+                command.Parameters.Add(new SqlParameter("@OpCode", request.OpCode));
+                command.Parameters.Add(new SqlParameter("@CNIC", (object?)request.CNIC ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@Search", request.Search ?? ""));
+                command.Parameters.Add(new SqlParameter("@SearchVal", request.SearchVal ?? ""));
+                command.Parameters.Add(new SqlParameter("@PFCatID", request.PFCatID));
+                command.Parameters.Add(new SqlParameter("@PlotSizeID", request.PlotSizeID));
+                command.Parameters.Add(new SqlParameter("@ProID", request.ProID));
+                command.Parameters.Add(new SqlParameter("@PFlotNo", request.PFlotNo ?? ""));
+                command.Parameters.Add(new SqlParameter("@PFlotNo2", request.PFlotNo2 ?? ""));
+                command.Parameters.Add(new SqlParameter("@StNo", request.StNo ?? ""));
+
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    var results = new List<MemberLookupResult>();
+
+                    while (await reader.ReadAsync())
+                    {
+                        var result = new MemberLookupResult
+                        {
+                            MemberNo = GetStringValue(reader, "MemberNo"),
+                            MemberNo2 = GetStringValue(reader, "MemberNo2"),
+                            BookNo = GetStringValue(reader, "BookNo"),
+                            FullName = GetStringValue(reader, "Member"),
+                            CNIC = GetStringValue(reader, "CNIC"),
+                            CardEDate = GetStringValue(reader, "CardEDate"),
+                            CardSDate = GetStringValue(reader, "CardSDate"),
+                            DOB = GetStringValue(reader, "DOB"),
+                            PFlotNo = GetStringValue(reader, "PFlotNo"),
+                            PFlotNo2 = GetStringValue(reader, "PFlotNo2"),
+                            StNo = GetStringValue(reader, "StNo"),
+                            PlotSize = GetStringValue(reader, "PlotSize"),
+                            PlotStatus = GetStringValue(reader, "PlotStatus"),
+                            ProID = GetStringValue(reader, "ProID")
+                        };
+                        results.Add(result);
+                    }
+
+                    _logger.LogInformation($"Member search returned {results.Count} results");
+                    return results;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error executing member search");
+            throw;
+        }
+    }
+
+    private static string? GetStringValue(System.Data.IDataReader reader, string columnName)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(columnName);
+
+            if (reader.IsDBNull(ordinal))
+            {
+                return null;
+            }
+
+            // Get the value and convert to string
+            var value = reader.GetValue(ordinal);
+
+            if (value == null || value is DBNull)
+            {
+                return null;
+            }
+
+            // Convert any type to string
+            return value.ToString();
+        }
+        catch (IndexOutOfRangeException)
+        {
+            // Column doesn't exist
+            return null;
+        }
+        catch (Exception ex)
+        {
+            // Log and return null for any other error
+            System.Diagnostics.Debug.WriteLine($"Error reading column {columnName}: {ex.Message}");
+            return null;
         }
     }
 }
