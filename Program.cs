@@ -20,6 +20,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IGeminiCNICExtractor, GeminiCNICExtractor>();
 builder.Services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IPlotCategoryService, PlotCategoryService>();
+builder.Services.AddScoped<IPlotSizeService, PlotSizeService>();
 
 builder.Services.AddRazorPages();
 var app = builder.Build();

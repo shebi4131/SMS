@@ -1,0 +1,354 @@
+@page "/membersearch"
+@using SMS.Models
+@using SMS.Services
+@inject IMemberService MemberService
+@inject IProjectService ProjectService
+@inject IPlotCategoryService PlotCategoryService
+@inject IPlotSizeService PlotSizeService
+@inject ILogger<MemberSearch> Logger
+@rendermode InteractiveServer
+
+<div class="min-vh-100 bg-gradient">
+    <div class="container py-5">
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="header-section text-center mb-5">
+                    <h1 class="display-4 fw-bold text-primary mb-3">
+                        <i class="fas fa-search"></i> Member Search
+                    </h1>
+                    <p class="lead text-muted">Search and filter member records using multiple criteria</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <!-- Search Form -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Search Filters</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <!-- Project Name Dropdown -->
+                            <div class="col-md-6">
+                                <label for="projectSelect" class="form-label">Project</label>
+                                <select class="form-select" id="projectSelect" @onchange="OnProjectChanged">
+                                    <option value="-1">-- All Projects --</option>
+                                    @if (Projects != null)
+                                    {
+                                        @foreach (var project in Projects)
+                                        {
+                                            <option value="@project.ProID">@project.ProName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Plot Category Dropdown -->
+                            <div class="col-md-6">
+                                <label for="categorySelect" class="form-label">Plot Category</label>
+                                <select class="form-select" id="categorySelect" @onchange="OnCategoryChanged">
+                                    <option value="-1">-- All Categories --</option>
+                                    @if (PlotCategories != null)
+                                    {
+                                        @foreach (var category in PlotCategories)
+                                        {
+                                            <option value="@category.RecordID">@category.Record</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Plot Size Dropdown (Searchable) -->
+                            <div class="col-md-6">
+                                <label for="plotSizeSearch" class="form-label">Plot Size</label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="plotSizeSearch" 
+                                           placeholder="Search or select plot size..."
+                                           @bind="PlotSizeSearchText"
+                                           @oninput="FilterPlotSizes">
+                                    @if (ShowPlotSizeDropdown && FilteredPlotSizes.Any())
+                                    {
+                                        <div class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="top: 100%; z-index: 1000; max-height: 300px; overflow-y: auto;">
+                                            @foreach (var size in FilteredPlotSizes.Take(10))
+                                            {
+                                                <div class="p-2 cursor-pointer border-bottom" @onclick="() => SelectPlotSize(size)" style="cursor: pointer; hover: background-color: #f0f0f0;">
+                                                    @size.PlotSizeValue
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Plot/Flat Number 1 -->
+                            <div class="col-md-6">
+                                <label for="pFlotNo" class="form-label">Plot/Flat Number</label>
+                                <input type="text" class="form-control" id="pFlotNo" 
+                                       @bind="SearchRequest.PFlotNo" placeholder="e.g., A-101">
+                            </div>
+
+                            <!-- Plot/Flat Number 2 -->
+                            <div class="col-md-6">
+                                <label for="pFlotNo2" class="form-label">Plot/Flat Number (Part 2)</label>
+                                <input type="text" class="form-control" id="pFlotNo2" 
+                                       @bind="SearchRequest.PFlotNo2" placeholder="Optional second part">
+                            </div>
+
+                            <!-- Street Number -->
+                            <div class="col-md-6">
+                                <label for="stNo" class="form-label">Street Number</label>
+                                <input type="text" class="form-control" id="stNo" 
+                                       @bind="SearchRequest.StNo" placeholder="e.g., ST-5">
+                            </div>
+
+                            <!-- Free-Text Search -->
+                            <div class="col-md-6">
+                                <label for="search" class="form-label">Search Text</label>
+                                <input type="text" class="form-control" id="search" 
+                                       @bind="SearchRequest.Search" placeholder="e.g., name or member number">
+                            </div>
+
+                            <!-- Search Column (hidden by default, power users) -->
+                            <div class="col-md-12">
+                                <label for="searchVal" class="form-label">Search Column (Advanced)</label>
+                                <input type="text" class="form-control form-control-sm" id="searchVal" 
+                                       @bind="SearchRequest.SearchVal" placeholder="e.g., Tbl_Memberinfo.FullName (leave blank for default)">
+                                <small class="text-muted">Leave blank for standard search</small>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button class="btn btn-primary btn-lg w-100" 
+                                        @onclick="PerformSearch" 
+                                        disabled="@IsSearching">
+                                    @if (IsSearching)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Searching...</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="fas fa-search me-2"></i>Search</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error:</strong> @ErrorMessage
+                        <button type="button" class="btn-close" @onclick="() => ErrorMessage = null"></button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(SuccessMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        @SuccessMessage
+                        <button type="button" class="btn-close" @onclick="() => SuccessMessage = null"></button>
+                    </div>
+                }
+
+                <!-- Results Table -->
+                @if (SearchResults != null && SearchResults.Any())
+                {
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-table me-2"></i>Search Results 
+                                <span class="badge bg-light text-dark">@SearchResults.Count</span>
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 10%;">Member No</th>
+                                            <th style="width: 15%;">Full Name</th>
+                                            <th style="width: 10%;">CNIC</th>
+                                            <th style="width: 12%;">Plot/Flat</th>
+                                            <th style="width: 10%;">Plot Size</th>
+                                            <th style="width: 12%;">Status</th>
+                                            <th style="width: 10%;">Card Date</th>
+                                            <th style="width: 10%;">DOB</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var result in SearchResults)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@result.MemberNo</strong>
+                                                    @if (!string.IsNullOrEmpty(result.MemberNo2))
+                                                    {
+                                                        <br />
+                                                        <small class="text-muted">@result.MemberNo2</small>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div>@result.FullName</div>
+                                                    @if (!string.IsNullOrEmpty(result.BookNo))
+                                                    {
+                                                        <small class="text-muted">Book: @result.BookNo</small>
+                                                    }
+                                                </td>
+                                                <td>@result.CNIC</td>
+                                                <td>
+                                                    <div>@result.PFlotNo @result.PFlotNo2</div>
+                                                    @if (!string.IsNullOrEmpty(result.StNo))
+                                                    {
+                                                        <small class="text-muted">@result.StNo</small>
+                                                    }
+                                                </td>
+                                                <td>@result.PlotSize</td>
+                                                <td>
+                                                    @if (result.PlotStatus == "Owner")
+                                                    {
+                                                        <span class="badge bg-success">@result.PlotStatus</span>
+                                                    }
+                                                    else if (result.PlotStatus == "Transfered")
+                                                    {
+                                                        <span class="badge bg-warning">@result.PlotStatus</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">@result.PlotStatus</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small>@result.CardSDate</small>
+                                                    <br />
+                                                    <small class="text-muted">to @result.CardEDate</small>
+                                                </td>
+                                                <td>@result.DOB</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (HasSearched && !IsSearching)
+                {
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No members found matching your search criteria. Try adjusting your filters.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private MemberSearchRequest SearchRequest { get; set; } = new();
+    private List<MemberLookupResult>? SearchResults { get; set; }
+    private List<Project>? Projects { get; set; }
+    private List<PlotCategory>? PlotCategories { get; set; }
+    private List<PlotSize>? AllPlotSizes { get; set; }
+    private List<PlotSize> FilteredPlotSizes { get; set; } = new();
+    private string PlotSizeSearchText { get; set; } = string.Empty;
+    private bool ShowPlotSizeDropdown { get; set; }
+    private bool IsSearching { get; set; }
+    private bool HasSearched { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load all data on component initialization
+            Projects = await ProjectService.GetAllProjectsAsync();
+            PlotCategories = await PlotCategoryService.GetAllCategoriesAsync();
+            AllPlotSizes = await PlotSizeService.GetAllPlotSizesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading data: {ex.Message}";
+            Logger.LogError(ex, "Error loading initial data");
+        }
+    }
+
+    private void OnProjectChanged(ChangeEventArgs e)
+    {
+        if (long.TryParse(e.Value?.ToString(), out var proID))
+        {
+            SearchRequest.ProID = proID;
+        }
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        if (short.TryParse(e.Value?.ToString(), out var catID))
+        {
+            SearchRequest.PFCatID = catID;
+        }
+    }
+
+    private void FilterPlotSizes(ChangeEventArgs e)
+    {
+        var searchText = e.Value?.ToString() ?? string.Empty;
+        PlotSizeSearchText = searchText;
+        ShowPlotSizeDropdown = !string.IsNullOrWhiteSpace(searchText);
+
+        if (AllPlotSizes != null && ShowPlotSizeDropdown)
+        {
+            FilteredPlotSizes = AllPlotSizes
+                .Where(p => p.PlotSizeValue.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void SelectPlotSize(PlotSize plotSize)
+    {
+        SearchRequest.PlotSizeID = plotSize.PlotSizeID;
+        PlotSizeSearchText = plotSize.PlotSizeValue;
+        ShowPlotSizeDropdown = false;
+    }
+
+    private async Task PerformSearch()
+    {
+        try
+        {
+            ErrorMessage = null;
+            SuccessMessage = null;
+            IsSearching = true;
+            HasSearched = true;
+
+            SearchResults = await MemberService.SearchMembersAsync(SearchRequest);
+
+            if (SearchResults.Any())
+            {
+                SuccessMessage = $"Found {SearchResults.Count} member(s) matching your criteria.";
+            }
+            else
+            {
+                SuccessMessage = "Search completed but no results were found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred while searching: {ex.Message}";
+            Logger.LogError(ex, "Error performing member search");
+            SearchResults = null;
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+}

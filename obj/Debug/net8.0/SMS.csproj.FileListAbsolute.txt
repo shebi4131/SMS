@@ -166,7 +166,6 @@ F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\staticwebassets.bu
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\staticwebassets.development.json
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\staticwebassets.build.endpoints.json
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\swae.build.ex.cache
-F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.csproj.Up2Date
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.dll
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\refint\SMS.dll
@@ -174,3 +173,4 @@ F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.pdb
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.genruntimeconfig.cache
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\ref\SMS.dll
 F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\obj\Debug\net8.0\SMS.sourcelink.json
+F:\Personal\shoaib ahmed\.Net Blazor\SMS\SMS\bin\Debug\net8.0\dotnet-tools.json

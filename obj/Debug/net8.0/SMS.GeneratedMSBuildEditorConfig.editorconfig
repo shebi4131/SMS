@@ -39,6 +39,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[F:/Personal/shoaib ahmed/.Net Blazor/SMS/SMS/Components/Pages/MemberSearch.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1iZXJTZWFyY2gucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [F:/Personal/shoaib ahmed/.Net Blazor/SMS/SMS/Components/Routes.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 

@@ -15,6 +15,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<MemberInv> MemberInvs { get; set; }
     public DbSet<MInvPlotFlat> MInvPlotFlats { get; set; }
     public DbSet<PlotSize> PlotSizes { get; set; }
+    public DbSet<Project> Projects { get; set; }
+    public DbSet<PlotCategory> PlotCategories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,8 +78,29 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.PlotSizeID);
             entity.Property(e => e.PlotSizeValue)
-                  .HasColumnName("PlotSize")  // ← ADD THIS
+                  .HasColumnName("PlotSize")
                   .HasMaxLength(50);
+            entity.Property(e => e.PlotCategoryID).HasColumnName("PlotCategoryID");
+            entity.Property(e => e.CreateDate).HasColumnName("CreateDate");
+            entity.Property(e => e.isShow).HasColumnName("isShow");
+        });
+
+        // Configure Project
+        modelBuilder.Entity<Project>(entity =>
+        {
+            entity.HasKey(e => e.ProID);
+            entity.Property(e => e.RegNo).HasMaxLength(50);
+            entity.Property(e => e.ProCode).HasMaxLength(50);
+            entity.Property(e => e.ProName).HasMaxLength(255);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.Phase).HasMaxLength(100);
+        });
+
+        // Configure PlotCategory
+        modelBuilder.Entity<PlotCategory>(entity =>
+        {
+            entity.HasKey(e => e.RecordID);
+            entity.Property(e => e.Record).HasMaxLength(255);
         });
 
         // Configure table names to match your database
@@ -86,5 +109,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<MemberInv>().ToTable("Tbl_MemberInv");
         modelBuilder.Entity<MInvPlotFlat>().ToTable("Tbl_MInvPlotFlat");
         modelBuilder.Entity<PlotSize>().ToTable("Tbl_PlotSize");
+        modelBuilder.Entity<Project>().ToTable("Tbl_Project");
+        modelBuilder.Entity<PlotCategory>().ToTable("Tbl_PlotCategory");
     }
 }
